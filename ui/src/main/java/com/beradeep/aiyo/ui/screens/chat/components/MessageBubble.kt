@@ -17,8 +17,13 @@ import com.beradeep.aiyo.ui.basics.components.Text
 import com.beradeep.aiyo.ui.basics.components.card.Card
 import com.beradeep.aiyo.ui.markdownColor
 import com.beradeep.aiyo.ui.markdownTypography
+import com.mikepenz.markdown.annotator.annotatorSettings
 import com.mikepenz.markdown.compose.Markdown
+import com.mikepenz.markdown.compose.components.MarkdownComponent
 import com.mikepenz.markdown.compose.components.markdownComponents
+import com.mikepenz.markdown.compose.elements.MarkdownTable
+import com.mikepenz.markdown.compose.elements.MarkdownTableHeader
+import com.mikepenz.markdown.compose.elements.MarkdownTableRow
 import com.mikepenz.markdown.compose.elements.highlightedCodeBlock
 import com.mikepenz.markdown.compose.elements.highlightedCodeFence
 import com.mikepenz.markdown.model.State
@@ -64,11 +69,7 @@ fun MessageBubble(content: String, isUser: Boolean, markdownState: State, fontSi
                         list = textStyle,
                         table = textStyle
                     ),
-                    components =
-                    markdownComponents(
-                        codeBlock = highlightedCodeBlock,
-                        codeFence = highlightedCodeFence
-                    ),
+                    components = customMarkDownComponents(),
                     loading = { Text(text = content, style = textStyle) },
                     error = {
                         Text(
@@ -81,6 +82,42 @@ fun MessageBubble(content: String, isUser: Boolean, markdownState: State, fontSi
         }
     }
 }
+
+private fun customMarkDownComponents() =
+    markdownComponents(
+        codeBlock = highlightedCodeBlock,
+        codeFence = highlightedCodeFence,
+        table = customMarkdownTable()
+    )
+
+private fun customMarkdownTable(): MarkdownComponent = {
+    MarkdownTable(
+        node = it.node,
+        content = it.content,
+        style = it.typography.table,
+        headerBlock = { content, header, tableWidth, style ->
+            MarkdownTableHeader(
+                content = content,
+                header = header,
+                tableWidth = tableWidth,
+                style = style,
+                annotatorSettings = annotatorSettings(),
+                maxLines = 2,
+            )
+        },
+        rowBlock = { content, header, tableWidth, style ->
+            MarkdownTableRow(
+                content = content,
+                header = header,
+                tableWidth = tableWidth,
+                style = style,
+                annotatorSettings = annotatorSettings(),
+                maxLines = Int.MAX_VALUE,
+            )
+        },
+    )
+}
+
 
 private fun TextStyle.withFontSize(fontSize: Int): TextStyle {
     return copy(

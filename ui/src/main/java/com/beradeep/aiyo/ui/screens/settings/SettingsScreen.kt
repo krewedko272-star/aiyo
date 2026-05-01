@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -160,7 +161,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 FontSizeSetting(
                     label = "Response Font Size",
-                    description = "Used for responses from the neural network.",
+                    description = "Used for responses from the model.",
                     fontSize = uiState.responseFontSize,
                     onFontSizeChanged = { fontSize ->
                         viewModel.onUiEvent(SettingsUiEvent.OnUpdateResponseFontSize(fontSize))
@@ -388,7 +389,8 @@ fun ThemeSelectionSetting(
                 onClick = { onUpdateThemeType(themeType) },
                 shape = SegmentedButtonDefaults.itemShape(
                     index = themeType.ordinal,
-                    count = ThemeType.entries.size
+                    count = ThemeType.entries.size,
+                    baseShape = RoundedCornerShape(8.dp)
                 ),
                 colors = SegmentedButtonDefaults.colors(
                     activeContainerColor = AiyoTheme.colors.primary,
