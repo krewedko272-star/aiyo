@@ -370,7 +370,7 @@ private fun ChatScreen(
         if (showDeleteConversationDialog && uiState.selectedConversation != null) {
             DeleteConversationDialog(
                 conversationTitle = uiState.selectedConversation!!.title,
-                onConfirm = {
+                onDelete = {
                     onUiEvent(ChatUiEvent.OnDeleteConversation)
                     showDeleteConversationDialog = false
                 },
