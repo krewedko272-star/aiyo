@@ -359,8 +359,8 @@ private fun ChatScreen(
         if (showRenameConversationDialog && uiState.selectedConversation != null) {
             RenameConversationDialog(
                 initial = uiState.selectedConversation!!.title,
-                onRename = { newTitle ->
-                    onUiEvent(ChatUiEvent.OnRenameConversation(newTitle))
+                onSave = { newTitle ->
+                    onUiEvent(ChatUiEvent.OnUpdateConversation(uiState.selectedConversation!!.copy(title = newTitle)))
                     showRenameConversationDialog = false
                 },
                 onDismiss = { showRenameConversationDialog = false }
@@ -369,7 +369,7 @@ private fun ChatScreen(
 
         if (showDeleteConversationDialog && uiState.selectedConversation != null) {
             DeleteConversationDialog(
-                conversationTitle = uiState.selectedConversation!!.title,
+                title = uiState.selectedConversation!!.title,
                 onDelete = {
                     onUiEvent(ChatUiEvent.OnDeleteConversation(uiState.selectedConversation!!))
                     showDeleteConversationDialog = false
