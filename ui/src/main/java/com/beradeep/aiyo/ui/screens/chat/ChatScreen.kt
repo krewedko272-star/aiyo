@@ -1,6 +1,5 @@
 package com.beradeep.aiyo.ui.screens.chat
 
-import android.content.ClipData
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -26,11 +25,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ModalDrawerSheet
@@ -38,7 +36,6 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -47,18 +44,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastRoundToInt
-import androidx.compose.ui.window.PopupPositionProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.beradeep.aiyo.ui.AiyoTheme
 import com.beradeep.aiyo.ui.LocalTypography
@@ -71,9 +60,6 @@ import com.beradeep.aiyo.ui.basics.components.IconButton
 import com.beradeep.aiyo.ui.basics.components.IconButtonVariant
 import com.beradeep.aiyo.ui.basics.components.Scaffold
 import com.beradeep.aiyo.ui.basics.components.Text
-import com.beradeep.aiyo.ui.basics.components.Tooltip
-import com.beradeep.aiyo.ui.basics.components.TooltipBox
-import com.beradeep.aiyo.ui.basics.components.rememberTooltipState
 import com.beradeep.aiyo.ui.basics.components.topbar.TopBar
 import com.beradeep.aiyo.ui.screens.chat.components.ApiKeyDialog
 import com.beradeep.aiyo.ui.screens.chat.components.ChatInputTextField
@@ -260,9 +246,6 @@ private fun ChatScreen(
                     val lazyListState = rememberLazyListState()
                     ListAutoScrollToBottom(2, lazyListState)
 
-                    var longPressX by remember { mutableIntStateOf(0) }
-                    var longPressY by remember { mutableIntStateOf(0) }
-                    val positionProvider = tooltipPositionProvider(longPressX, longPressY)
                     LazyColumn(
                         modifier = Modifier.weight(1f),
                         state = lazyListState
@@ -272,64 +255,18 @@ private fun ChatScreen(
                             key = { it.id }
                         ) { msg ->
                             Spacer(modifier = Modifier.height(8.dp))
-                            val tooltipState = rememberTooltipState(isPersistent = true)
-                            TooltipBox(
-                                state = tooltipState,
-                                positionProvider = positionProvider,
-                                tooltip = {
-                                    val clipboard = LocalClipboard.current
-                                    Tooltip(
-                                        caretSize = DpSize(0.dp, 0.dp),
-                                        shape = RoundedCornerShape(12.dp)
-                                    ) {
-                                        Button(
-                                            variant = ButtonVariant.PrimaryGhost,
-                                            onClick = {
-                                                clipboard.nativeClipboard.setPrimaryClip(
-                                                    ClipData.newPlainText(
-                                                        "Copied from Aiyo",
-                                                        msg.content ?: ""
-                                                    )
-                                                )
-                                                tooltipState.dismiss()
-                                            }
-                                        ) {
-                                            Row {
-                                                Icon(imageVector = Icons.Rounded.ContentCopy)
-                                                Spacer(Modifier.width(16.dp))
-                                                Text(text = "Copy")
-                                            }
-                                        }
+                            SelectionContainer {
+                                MessageBubble(
+                                    content = msg.content.toString(),
+                                    isUser = msg.isUser,
+                                    markdownState = msg.markdownState,
+                                    fontSize =
+                                    if (msg.isUser) {
+                                        uiState.requestFontSize
+                                    } else {
+                                        uiState.responseFontSize
                                     }
-                                }
-                            ) {
-                                val scope = rememberCoroutineScope()
-                                Box(
-                                    Modifier
-                                        .pointerInput(Unit) {
-                                            detectTapGestures(
-                                                onLongPress = { offset ->
-                                                    scope.launch {
-                                                        longPressX = offset.x.fastRoundToInt()
-                                                        longPressY = offset.y.fastRoundToInt()
-                                                        tooltipState.show()
-                                                    }
-                                                }
-                                            )
-                                        }
-                                ) {
-                                    MessageBubble(
-                                        content = msg.content.toString(),
-                                        isUser = msg.isUser,
-                                        markdownState = msg.markdownState,
-                                        fontSize =
-                                        if (msg.isUser) {
-                                            uiState.requestFontSize
-                                        } else {
-                                            uiState.responseFontSize
-                                        }
-                                    )
-                                }
+                                )
                             }
                         }
                         if (uiState.isLoadingResponse) {
@@ -421,13 +358,9 @@ private fun ChatScreen(
 
         if (showRenameConversationDialog && uiState.selectedConversation != null) {
             RenameConversationDialog(
-                initial = uiState.selectedConversation.title,
-                onSave = { newTitle ->
-                    onUiEvent(
-                        ChatUiEvent.OnUpdateConversation(
-                            uiState.selectedConversation.copy(title = newTitle)
-                        )
-                    )
+                initial = uiState.selectedConversation!!.title,
+                onRename = { newTitle ->
+                    onUiEvent(ChatUiEvent.OnRenameConversation(newTitle))
                     showRenameConversationDialog = false
                 },
                 onDismiss = { showRenameConversationDialog = false }
@@ -436,30 +369,13 @@ private fun ChatScreen(
 
         if (showDeleteConversationDialog && uiState.selectedConversation != null) {
             DeleteConversationDialog(
-                onDelete = {
-                    onUiEvent(ChatUiEvent.OnDeleteConversation(uiState.selectedConversation))
+                conversationTitle = uiState.selectedConversation!!.title,
+                onConfirm = {
+                    onUiEvent(ChatUiEvent.OnDeleteConversation)
                     showDeleteConversationDialog = false
                 },
                 onDismiss = { showDeleteConversationDialog = false }
             )
-        }
-    }
-}
-
-@Composable
-fun tooltipPositionProvider(x: Int, y: Int): PopupPositionProvider {
-    return remember(x, y) {
-        object : PopupPositionProvider {
-            override fun calculatePosition(
-                anchorBounds: IntRect,
-                windowSize: IntSize,
-                layoutDirection: LayoutDirection,
-                popupContentSize: IntSize
-            ): IntOffset {
-                val x1 = anchorBounds.left + x
-                val y1 = anchorBounds.top + y
-                return IntOffset(x1, y1)
-            }
         }
     }
 }
